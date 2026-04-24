@@ -1,0 +1,6 @@
+mainmenu "Project Configuration"
+
+config TEST
+	bool "TEST option"
+	help
+		this should only cause main.c to rebuild
