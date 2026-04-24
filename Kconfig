@@ -4,3 +4,6 @@ config TEST
 	bool "TEST option"
 	help
 		this should only cause main.c to rebuild
+
+config TEST_INC
+	bool "test option from inc"

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <yak/config.h>
+#include "test.h"
 
 int main(int argc, char *argv[])
 {
