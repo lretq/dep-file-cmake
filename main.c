@@ -4,11 +4,11 @@
 
 int main(int argc, char *argv[])
 {
-  #if CONFIG_TEST
+#if CONFIG_TEST
   printf("Test is set!\n");
-  #else
+#else
   printf("Test is unset!\n");
-  #endif
+#endif
 
   return 0;
 }

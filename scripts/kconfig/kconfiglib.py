@@ -1809,6 +1809,8 @@ class Kconfig(object):
             # making a missing symbol logically equivalent to n
 
             if sym._write_to_conf:
+                print("{}:{}".format(sym.name, val))
+
                 if sym._old_val is None and \
                    sym.orig_type in _BOOL_TRISTATE and \
                    val == "n":

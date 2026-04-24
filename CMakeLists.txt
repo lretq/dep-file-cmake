@@ -15,6 +15,7 @@ include(kconfig)
 add_executable(
 	program
 	main.c
+	unrelated.c
 )
 
 target_include_directories(program PRIVATE
@@ -23,4 +24,4 @@ target_include_directories(program PRIVATE
 )
 
 set_target_properties(program PROPERTIES C_COMPILER_LAUNCHER
-    "python3;${CMAKE_SOURCE_DIR}/fixdep.py")
+    "python3;${CMAKE_SOURCE_DIR}/fixdep.py;${KCONFIG_SYNC_DIR}")

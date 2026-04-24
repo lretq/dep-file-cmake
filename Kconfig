@@ -7,3 +7,6 @@ config TEST
 
 config TEST_INC
 	bool "test option from inc"
+
+config TEST_UNRELATED
+	bool "this is an unrelated option, should only build unrelated.c not main.c"

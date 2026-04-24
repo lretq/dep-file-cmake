@@ -122,7 +122,8 @@ def main():
     # Write the merged configuration and the C header
     print(kconf.write_config(args.config_out))
     print(kconf.write_autoconf(args.header_out))
-    print(kconf.sync_deps("TEST_DIR"))
+
+    print(kconf.sync_deps(args.kconfig_sync_dir))
 
     # Write the list of parsed Kconfig files to a file
     write_kconfig_filenames(kconf, args.kconfig_list_out)
@@ -305,6 +306,8 @@ def parse_args():
                         help="Output header file")
     parser.add_argument("kconfig_list_out",
                         help="Output file for list of parsed Kconfig files")
+    parser.add_argument("kconfig_sync_dir",
+                        help="Directory for sync_deps")
     parser.add_argument("configs_in",
                         nargs="+",
                         help="Input configuration fragments. Will be merged "

@@ -3,15 +3,24 @@
 import sys
 import subprocess
 import os
+import re
 
 def main():
-    args = sys.argv[1:]
+    sync_dir = sys.argv[1]
+    args = sys.argv[2:]
+
+    print("fixdep.py is running: {}".format(args))
 
     # locate -MF argument
     dep_file = None
+    src_file = None
     try:
         mf_index = args.index("-MF")
         dep_file = args[mf_index + 1]
+
+        # TODO: fragile
+        c_index  = args.index("-c")
+        src_file = args[c_index + 1]
     except (ValueError, IndexError):
         # just run normally if no -MF was passed
         pass
@@ -22,13 +31,20 @@ def main():
     print("dep file expected at: {}".format(dep_file))
     print(os.path.exists(dep_file))
 
-    if result.returncode == 0 and dep_file and os.path.exists(dep_file):
-        prune_dependencies(dep_file)
+    if result.returncode == 0:
+        if dep_file and os.path.exists(dep_file) and src_file and os.path.exists(src_file):
+            fixup_deps(dep_file, src_file, sync_dir)
 
     sys.exit(result.returncode)
 
-def prune_dependencies(filepath):
+def scan_config_strings(filepath):
+    pattern = re.compile(r'\bCONFIG_\w+')
     with open(filepath, 'r') as f:
+        content = f.read()
+    return set(pattern.findall(content))
+
+def fixup_deps(dep_filepath, src_filepath, sync_dir):
+    with open(dep_filepath, 'r') as f:
         content = f.read()
 
     content = content.replace('\\\n', ' ')
@@ -43,9 +59,18 @@ def prune_dependencies(filepath):
     target = filtered_tokens[0]
     deps = filtered_tokens[1:]
 
-    new_content = f"{target}\\\n  " + " \\\n  ".join(deps) + "\n"
+    all_options = set().union(*[scan_config_strings(d) for d in deps], scan_config_strings(src_filepath))
+    # slice off the CONFIG_ prefix
+    # then lower
+    # then replace _ with /
+    # finally add .h
+    sync_deps = [sync_dir + "/" + o[7:].lower().replace("_", "/") + ".h" for o in all_options]
+    deps += sync_deps
 
-    with open(filepath, 'w') as f:
+    phony_rules = "".join(f"\n{dep}:\n" for dep in sync_deps)
+    new_content = f"{target}\\\n  " + " \\\n  ".join(deps) + "\n" + phony_rules
+
+    with open(dep_filepath, 'w') as f:
         f.write(new_content)
 
 if __name__ == "__main__":
