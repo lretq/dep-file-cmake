@@ -1809,14 +1809,17 @@ class Kconfig(object):
             # making a missing symbol logically equivalent to n
 
             if sym._write_to_conf:
-                print("{}:{}".format(sym.name, val))
+                print("{}:{} old: {}".format(sym.name, val, sym._old_val))
 
+                # as None is logically equivalent to 'n',
+                # we can create a file if it does not exist yet in place, once.
                 if sym._old_val is None and \
                    sym.orig_type in _BOOL_TRISTATE and \
                    val == "n":
-                    # No old value (the symbol was missing or n), new value n.
-                    # No change.
-                    continue
+                     if exists(_dep_file_path(path, sym.name)):
+                       # No old value (the symbol was missing or n), new value n.
+                       # No change.
+                       continue
 
                 if val == sym._old_val:
                     # New value matches old. No change.
@@ -6376,14 +6379,18 @@ def _sym_to_num(sym):
            int(sym.str_value, _TYPE_TO_BASE[sym.orig_type])
 
 
-def _touch_dep_file(path, sym_name):
-    # If sym_name is MY_SYM_NAME, touches my/sym/name.h. See the sync_deps()
-    # docstring.
-
+def _dep_file_path(path, sym_name):
     sym_path = path + os.sep + sym_name.lower().replace("_", os.sep) + ".h"
     sym_path_dir = dirname(sym_path)
     if not exists(sym_path_dir):
         os.makedirs(sym_path_dir, 0o755)
+    return sym_path
+
+def _touch_dep_file(path, sym_name):
+    # If sym_name is MY_SYM_NAME, touches my/sym/name.h. See the sync_deps()
+    # docstring.
+
+    sym_path = _dep_file_path(path, sym_name)
 
     # A kind of truncating touch, mirroring the C tools
     os.close(os.open(

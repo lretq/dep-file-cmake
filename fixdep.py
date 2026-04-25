@@ -9,18 +9,13 @@ def main():
     sync_dir = sys.argv[1]
     args = sys.argv[2:]
 
-    print("fixdep.py is running: {}".format(args))
+    #print("fixdep.py is running: {}".format(args))
 
     # locate -MF argument
     dep_file = None
-    src_file = None
     try:
         mf_index = args.index("-MF")
         dep_file = args[mf_index + 1]
-
-        # TODO: fragile
-        c_index  = args.index("-c")
-        src_file = args[c_index + 1]
     except (ValueError, IndexError):
         # just run normally if no -MF was passed
         pass
@@ -28,12 +23,11 @@ def main():
     result = subprocess.run(args)
 
 
-    print("dep file expected at: {}".format(dep_file))
-    print(os.path.exists(dep_file))
+    #print("dep file expected at: {}".format(dep_file))
 
     if result.returncode == 0:
-        if dep_file and os.path.exists(dep_file) and src_file and os.path.exists(src_file):
-            fixup_deps(dep_file, src_file, sync_dir)
+        if dep_file and os.path.exists(dep_file):
+            fixup_deps(dep_file, sync_dir)
 
     sys.exit(result.returncode)
 
@@ -43,9 +37,12 @@ def scan_config_strings(filepath):
         content = f.read()
     return set(pattern.findall(content))
 
-def fixup_deps(dep_filepath, src_filepath, sync_dir):
+def fixup_deps(dep_filepath, sync_dir):
     with open(dep_filepath, 'r') as f:
         content = f.read()
+
+    # remove comments
+    content = '\n'.join(line for line in content.split('\n') if '#' not in line)
 
     content = content.replace('\\\n', ' ')
 
@@ -59,7 +56,9 @@ def fixup_deps(dep_filepath, src_filepath, sync_dir):
     target = filtered_tokens[0]
     deps = filtered_tokens[1:]
 
-    all_options = set().union(*[scan_config_strings(d) for d in deps], scan_config_strings(src_filepath))
+    # linux' fixdep.c has some special casing for DT and rustc sources. If needed, the first source dep following the colon (deps[1]) is normally the source file.
+
+    all_options = set().union(*[scan_config_strings(d) for d in deps])
     # slice off the CONFIG_ prefix
     # then lower
     # then replace _ with /
